@@ -71,3 +71,4 @@ yarn.lock
 .env.test.local
 .env.production.local
 .env.local
+/src/template_example
