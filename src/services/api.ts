@@ -13,7 +13,7 @@ declare module 'axios' {
 }
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: 'http://localhost:8080',
   timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -86,10 +86,9 @@ api.interceptors.response.use(
         }
 
         // Attempt to refresh token
-        const response = await axios.post(
-          `${process.env.REACT_APP_API_URL}/auth/refresh`,
-          { refreshToken }
-        );
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/refresh`, {
+          refreshToken,
+        });
 
         const { token } = response.data;
         localStorage.setItem('token', token);
