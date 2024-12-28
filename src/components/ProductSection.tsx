@@ -16,7 +16,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, bgColor }) => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const data = await productService.getAllProducts({
+        const data = await productService.getPublicProducts({
           page: 1,
           size: 10,
           search: '',

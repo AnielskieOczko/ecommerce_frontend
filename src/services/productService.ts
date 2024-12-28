@@ -15,8 +15,9 @@ interface ProductFilters extends PageRequest {
   maxPrice?: number;
 }
 
-const BASE_URL = '/api/v1/products';
-const CATEGORY_URL = '/api/v1/categories';
+const BASE_URL = '/api/v1/public/products';
+const CATEGORY_URL_PUBLIC = '/api/v1/public/categories';
+const CATEGORY_URL_ADMIN = '/api/v1/admin/categories';
 
 // Updated product methods with pagination and filters
 export const getAllProducts = async (
@@ -154,7 +155,7 @@ export const getProductsByCategory = async (categoryId: number): Promise<Product
 // Category methods
 export const getAllCategories = async (params: PageRequest) => {
   try {
-    const response = await api.get<PaginatedResponse<CategoryDTO>>('/api/v1/categories', {
+    const response = await api.get<PaginatedResponse<CategoryDTO>>('/api/v1/admin/categories', {
       params: {
         page: params.page - 1, // API usually uses 0-based indexing
         size: params.size,
@@ -170,7 +171,7 @@ export const getAllCategories = async (params: PageRequest) => {
 
 export const getCategoryById = async (id: number): Promise<CategoryDTO> => {
   try {
-    const response = await api.get<CategoryDTO>(`${CATEGORY_URL}/${id}`);
+    const response = await api.get<CategoryDTO>(`${CATEGORY_URL_PUBLIC}/${id}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -180,7 +181,8 @@ export const getCategoryById = async (id: number): Promise<CategoryDTO> => {
 // ADMIN methods
 export const createCategory = async (category: CreateCategoryDTO): Promise<CategoryDTO> => {
   try {
-    const response = await api.post<CategoryDTO>(CATEGORY_URL, category);
+    const response = await api.post<CategoryDTO>(CATEGORY_URL_ADMIN, category);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     throw error;
@@ -192,7 +194,7 @@ export const updateCategory = async (
   category: UpdateCategoryDTO
 ): Promise<CategoryDTO> => {
   try {
-    const response = await api.put<CategoryDTO>(`${CATEGORY_URL}/${id}`, category);
+    const response = await api.put<CategoryDTO>(`${CATEGORY_URL_ADMIN}/${id}`, category);
     return response.data;
   } catch (error) {
     throw error;
@@ -201,7 +203,7 @@ export const updateCategory = async (
 
 export const deleteCategory = async (id: number): Promise<void> => {
   try {
-    await api.delete(`${CATEGORY_URL}/${id}`);
+    await api.delete(`${CATEGORY_URL_ADMIN}/${id}`);
   } catch (error) {
     throw error;
   }
@@ -224,6 +226,26 @@ export const uploadImage = async (file: File): Promise<string> => {
   }
 };
 
+// Public methods (no auth required)
+export const getPublicProducts = async (params: PageRequest) => {
+  try {
+    const response = await api.get<PaginatedResponse<ProductResponseDTO>>(
+      '/api/v1/public/products',
+      {
+        params: {
+          page: params.page - 1,
+          size: params.size,
+          sort: params.sort,
+          search: params.search,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // You can export all functions as a single object if preferred
 export const productService = {
   getAllProducts,
@@ -240,6 +262,7 @@ export const productService = {
   updateCategory,
   deleteCategory,
   uploadImage,
+  getPublicProducts,
 };
 
 export default productService;
