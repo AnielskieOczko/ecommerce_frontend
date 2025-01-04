@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productService } from '../../../services/productService';
+import { categoryService } from '../../../services/categoryService';
 
 const CategoryEdit = () => {
   const { id } = useParams();
@@ -12,7 +13,7 @@ const CategoryEdit = () => {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const category = await productService.getCategoryById(Number(id));
+        const category = await categoryService.getCategoryById(Number(id));
         setName(category.name);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch category');
@@ -27,7 +28,7 @@ const CategoryEdit = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await productService.updateCategory(Number(id), { name });
+      await categoryService.updateCategory(Number(id), { name });
       navigate('/admin/categories');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update category');

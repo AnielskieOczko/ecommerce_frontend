@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../../../services/productService';
+import { categoryService } from '../../../services/categoryService';
 
 const CategoryCreate = () => {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ const CategoryCreate = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await productService.createCategory({ name });
+      await categoryService.createCategory({ name });
       navigate('/admin/categories');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create category');

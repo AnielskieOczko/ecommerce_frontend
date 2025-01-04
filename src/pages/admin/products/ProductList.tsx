@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ProductResponseDTO, CategoryDTO } from '../../../types/product';
+import { ProductResponseDTO } from '../../../types/product';
+import { CategoryDTO } from '../../../types/category';
 import { PaginatedResponse, PageRequest } from '../../../types/common';
 import { productService } from '../../../services/productService';
+import { categoryService } from '../../../services/categoryService';
 import debounce from 'lodash/debounce';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 interface ProductFilters extends PageRequest {
   categoryId?: number;
@@ -39,7 +42,7 @@ const ProductList = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await productService.getAllCategories({ page: 1, size: 100 });
+        const response = await categoryService.getAllCategories({ page: 1, size: 100 });
         setCategories(response.content);
       } catch (err) {
         console.error('Failed to fetch categories:', err);
@@ -60,12 +63,15 @@ const ProductList = () => {
       const response = await productService.getAllProducts(filters);
       setProducts(response.content);
       setPagination(response);
+      console.log(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch products');
     } finally {
       setLoading(false);
     }
   };
+
+  console.log(products);
 
   useEffect(() => {
     fetchProducts();
@@ -199,12 +205,20 @@ const ProductList = () => {
             {products.map((product) => (
               <tr key={product.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {product.imageList[0] && (
+                  {product.imageList && product.imageList[0] ? (
                     <img
-                      src={product.imageList[0].path}
-                      alt={product.name}
-                      className="h-10 w-10 object-cover rounded"
+                      src={getImageUrl(product.imageList[0].path)}
+                      alt={product.imageList[0].altText || product.name}
+                      className="h-16 w-16 object-cover rounded-md"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://placehold.co/100x100?text=No+Image';
+                      }}
                     />
+                  ) : (
+                    <div className="h-16 w-16 bg-gray-200 rounded-md flex items-center justify-center">
+                      <span className="text-gray-400">No image</span>
+                    </div>
                   )}
                 </td>
                 <td className="px-6 py-4">{product.name}</td>

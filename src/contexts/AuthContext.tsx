@@ -30,7 +30,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      setIsAuthenticated(true);
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({
+          token,
+          email: payload.username,
+          id: parseInt(payload.sub),
+          roles: [],
+          refreshToken: '',
+          type: 'Bearer',
+        });
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error parsing token:', error);
+        localStorage.removeItem('token');
+      }
     }
   }, []);
 

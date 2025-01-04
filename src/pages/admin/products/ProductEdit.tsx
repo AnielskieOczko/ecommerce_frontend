@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ProductResponseDTO, CategoryDTO, ProductUpdateDTO } from '../../../types/product';
+import { ProductResponseDTO, ProductUpdateDTO } from '../../../types/product';
+import { CategoryDTO } from '../../../types/category';
 import { productService } from '../../../services/productService';
 import ImageUpload from '../../../components/admin/ImageUpload';
+import { categoryService } from '../../../services/categoryService';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 const ProductEdit = () => {
   const { id } = useParams();
@@ -12,6 +15,7 @@ const ProductEdit = () => {
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [product, setProduct] = useState<ProductResponseDTO | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [images, setImages] = useState<File[]>([]);
 
   // Fetch product and categories data
   useEffect(() => {
@@ -20,7 +24,7 @@ const ProductEdit = () => {
         setLoading(true);
         const [productData, categoriesData] = await Promise.all([
           productService.getProductById(Number(id)),
-          productService.getAllCategories({ page: 1, size: 100 }),
+          categoryService.getAllCategories({ page: 1, size: 100 }),
         ]);
 
         setProduct(productData);
@@ -43,27 +47,49 @@ const ProductEdit = () => {
     if (!product) return;
 
     try {
-      const formData = new FormData(e.currentTarget);
+      const form = e.currentTarget;
+      const formData = new FormData();
 
+      const nameInput = form.elements.namedItem('name') as HTMLInputElement;
+      const descriptionInput = form.elements.namedItem('description') as HTMLTextAreaElement;
+      const priceInput = form.elements.namedItem('price') as HTMLInputElement;
+      const currencyInput = form.elements.namedItem('currencyCode') as HTMLSelectElement;
+      const quantityInput = form.elements.namedItem('quantity') as HTMLInputElement;
+
+      if (!nameInput || !descriptionInput || !priceInput || !currencyInput || !quantityInput) {
+        throw new Error('Required form fields are missing');
+      }
+
+      // Add product data as JSON
       const updateData: ProductUpdateDTO = {
-        name: formData.get('name') as string,
-        description: formData.get('description') as string,
-        price: Number(formData.get('price')),
-        currencyCode: formData.get('currencyCode') as string,
-        quantity: Number(formData.get('quantity')),
+        name: nameInput.value,
+        description: descriptionInput.value,
+        price: Number(parseFloat(priceInput.value).toFixed(2)),
+        currencyCode: currencyInput.value,
+        quantity: Math.floor(Number(quantityInput.value)),
         categoryIds: selectedCategories,
-        imageList: product.imageList, // Keep existing images
+        imageList: product.imageList,
       };
 
-      await productService.updateProduct(Number(id), updateData);
+      formData.append(
+        'product',
+        new Blob([JSON.stringify(updateData)], { type: 'application/json' })
+      );
+
+      // Add new images if any
+      images.forEach((image) => {
+        formData.append('images', image);
+      });
+
+      await productService.updateProduct(Number(id), formData);
       navigate('/admin/products');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update product');
     }
   };
 
-  const handleImageDelete = async (imageId: number) => {
-    if (!product || !id) return;
+  const handleImageDelete = async (imageId: number | undefined) => {
+    if (!product || !id || !imageId) return;
 
     try {
       await productService.deleteProductImage(Number(id), imageId);
@@ -74,6 +100,11 @@ const ProductEdit = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete image');
     }
+  };
+
+  // Add handler for image selection
+  const handleImageSelect = (files: File[]) => {
+    setImages(files);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -109,6 +140,33 @@ const ProductEdit = () => {
               required
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Quantity</label>
+            <input
+              type="number"
+              name="quantity"
+              defaultValue={product.quantity}
+              min="1"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Currency Code */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Currency</label>
+          <select
+            name="currencyCode"
+            defaultValue={product.currencyCode}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          >
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="PLN">PLN</option>
+          </select>
         </div>
 
         {/* Description */}
@@ -154,17 +212,23 @@ const ProductEdit = () => {
             {product.imageList.map((image) => (
               <div key={image.id} className="relative group">
                 <img
-                  src={image.path}
+                  src={getImageUrl(image.path)}
                   alt={image.altText}
                   className="w-full h-32 object-cover rounded"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://placehold.co/100x100?text=No+Image';
+                  }}
                 />
-                <button
-                  type="button"
-                  onClick={() => handleImageDelete(image.id)}
-                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ×
-                </button>
+                {image.id && (
+                  <button
+                    type="button"
+                    onClick={() => handleImageDelete(image.id)}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -173,7 +237,28 @@ const ProductEdit = () => {
         {/* Add New Images */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Add New Images</label>
-          <ImageUpload onImageSelect={() => {}} />
+          <ImageUpload onImageSelect={handleImageSelect} />
+          {/* Preview selected images */}
+          {images.length > 0 && (
+            <div className="mt-4 grid grid-cols-4 gap-4">
+              {images.map((file, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-32 object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImages(images.filter((_, i) => i !== index))}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Form Actions */}

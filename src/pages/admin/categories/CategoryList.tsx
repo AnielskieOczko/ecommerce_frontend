@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CategoryDTO } from '../../../types/product';
+import { CategoryDTO } from '../../../types/category';
 import { PaginatedResponse, PageRequest } from '../../../types/common';
 import { productService } from '../../../services/productService';
+import { categoryService } from '../../../services/categoryService';
 import debounce from 'lodash/debounce';
 
 const CategoryList = () => {
@@ -32,7 +33,7 @@ const CategoryList = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await productService.getAllCategories(pageRequest);
+      const response = await categoryService.getAllCategories(pageRequest);
       setCategories(response.content);
       setPagination(response);
     } catch (err) {
@@ -62,7 +63,7 @@ const CategoryList = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
-        await productService.deleteCategory(id);
+        await categoryService.deleteCategory(id);
         fetchCategories();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete category');

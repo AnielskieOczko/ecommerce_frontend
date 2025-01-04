@@ -1,50 +1,37 @@
-import React, { useRef } from 'react';
+import React from 'react';
 
 interface ImageUploadProps {
-  onImageSelect: (files: FileList) => void;
-  multiple?: boolean;
+  onImageSelect: (files: File[]) => void;
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, multiple = true }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      onImageSelect(files);
+const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect }) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      onImageSelect(filesArray);
     }
   };
 
   return (
-    <div 
-      onClick={handleClick}
-      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500"
-    >
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleChange}
-        accept="image/*"
-        multiple={multiple}
-        className="hidden"
-      />
-      <div className="text-gray-500">
-        <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-          <path 
-            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <p className="mt-1">Click or drag images here to upload</p>
+    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+      <div className="space-y-1 text-center">
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          id="file-upload"
+        />
+        <label
+          htmlFor="file-upload"
+          className="cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"
+        >
+          Upload images
+        </label>
       </div>
     </div>
   );
 };
 
-export default ImageUpload; 
+export default ImageUpload;
