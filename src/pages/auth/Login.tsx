@@ -21,7 +21,10 @@ const Login = () => {
     try {
       const response = await authService.login(loginRequest);
       login(response.data);
-      navigate('/');
+
+      // Check if user is admin and redirect accordingly
+      const isAdmin = response.data.roles.includes('ROLE_ADMIN');
+      navigate(isAdmin ? '/admin' : '/');
     } catch (err) {
       setError('Invalid credentials');
     }
