@@ -16,7 +16,11 @@ const ProductCreate = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await categoryService.getAllCategories({ page: 1, size: 100 });
+        const response = await categoryService.getAllCategories({
+          page: 1,
+          size: 100,
+          sort: 'id:asc',
+        });
         setCategories(response.content);
       } catch (err) {
         setError('Failed to load categories');

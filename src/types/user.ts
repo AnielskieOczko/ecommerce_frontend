@@ -104,6 +104,15 @@ export interface UserStatistics {
   verificationStatus: VerificationStatus;
 }
 
+export interface AdminSearchUsersRequest {
+  search?: string;
+  isActive?: boolean;
+  authority?: string;
+  page: number;
+  size: number;
+  sort: string;
+}
+
 // Service interfaces
 export interface IUserService {
   // User profile operations

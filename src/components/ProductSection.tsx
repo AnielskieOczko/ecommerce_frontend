@@ -19,6 +19,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, bgColor }) => {
         const data = await productService.getPublicProducts({
           page: 1,
           size: 10,
+          sort: 'id:asc',
           search: '',
         });
         setProducts(data.content);

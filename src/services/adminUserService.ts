@@ -5,8 +5,9 @@ import {
   AdminUpdateUserRequest,
   AccountStatusRequest,
   AdminChangeUserAuthorityRequest,
+  AdminSearchUsersRequest,
 } from '../types/user';
-import { PageRequest, PaginatedResponse } from '../types/common';
+import { PaginatedResponse } from '../types/common';
 
 const BASE_URL = '/api/v1/admin/users';
 
@@ -16,16 +17,23 @@ export const adminUserService = {
     return response.data;
   },
 
-  getAllUsers: async (params: PageRequest): Promise<PaginatedResponse<UserResponseDTO>> => {
+  getAllUsers: async (
+    params: AdminSearchUsersRequest
+  ): Promise<PaginatedResponse<UserResponseDTO>> => {
     try {
       console.log('Fetching users with params:', params); // Debug log
+
       const response = await api.get<PaginatedResponse<UserResponseDTO>>(BASE_URL, {
         params: {
+          search: params.search || undefined,
+          isActive: params.isActive,
+          authority: params.authority || undefined,
           page: params.page - 1, // Convert to 0-based for backend
           size: params.size,
-          sort: params.sort,
+          sort: params.sort, // Already in format "field:direction"
         },
       });
+
       console.log('Users response:', response.data); // Debug log
       return response.data;
     } catch (error) {

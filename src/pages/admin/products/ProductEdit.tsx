@@ -24,7 +24,11 @@ const ProductEdit = () => {
         setLoading(true);
         const [productData, categoriesData] = await Promise.all([
           productService.getProductById(Number(id)),
-          categoryService.getAllCategories({ page: 1, size: 100 }),
+          categoryService.getAllCategories({
+            page: 1,
+            size: 100,
+            sort: 'id:asc',
+          }),
         ]);
 
         setProduct(productData);

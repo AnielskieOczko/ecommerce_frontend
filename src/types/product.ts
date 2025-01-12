@@ -1,4 +1,5 @@
 import { CategoryDTO } from './category';
+import { BaseFilters } from './common';
 
 // Value Objects
 interface Amount {
@@ -57,3 +58,18 @@ export interface CategoryResponseDTO {
   name: string;
   // other category fields...
 }
+
+export interface ProductSearchCriteria extends BaseFilters {
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minStockQuantity?: number;
+  maxStockQuantity?: number;
+}
+
+export type ProductSortField =
+  | 'id'
+  | 'categories'
+  | 'stockQuantity'
+  | 'productPrice'
+  | 'productName';

@@ -1,209 +1,288 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ProductResponseDTO } from '../../../types/product';
-import { CategoryDTO } from '../../../types/category';
-import { PaginatedResponse, PageRequest } from '../../../types/common';
 import { productService } from '../../../services/productService';
 import { categoryService } from '../../../services/categoryService';
-import debounce from 'lodash/debounce';
+import {
+  ProductResponseDTO,
+  ProductSortField,
+  ProductSearchCriteria,
+} from '../../../types/product';
+import { CategoryDTO } from '../../../types/category';
+import { PaginatedResponse, SortDirection } from '../../../types/common';
+import { debounce } from 'lodash';
 import { getImageUrl } from '../../../utils/imageUtils';
 
-interface ProductFilters extends PageRequest {
-  categoryId?: number;
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-const ProductList = () => {
-  // State
-  const [products, setProducts] = useState<ProductResponseDTO[]>([]);
+export const ProductList: React.FC = () => {
+  const [products, setProducts] = useState<PaginatedResponse<ProductResponseDTO> | null>(null);
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Filters and pagination state
-  const [filters, setFilters] = useState<ProductFilters>({
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [minStock, setMinStock] = useState<string>('');
+  const [maxStock, setMaxStock] = useState<string>('');
+  const [sortField, setSortField] = useState<ProductSortField>('productName');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [filters, setFilters] = useState<ProductSearchCriteria>({
     page: 1,
     size: 10,
-    search: '',
+    sort: 'productName:asc',
+    search: undefined,
     categoryId: undefined,
     minPrice: undefined,
     maxPrice: undefined,
+    minStockQuantity: undefined,
+    maxStockQuantity: undefined,
   });
 
-  const [pageRequest, setPageRequest] = useState<PageRequest>({
-    page: 1,
-    size: 10,
-    search: '',
-  });
-  const [pagination, setPagination] = useState<PaginatedResponse<ProductResponseDTO> | null>(null);
-
-  // Fetch categories for filter
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await categoryService.getAllCategories({ page: 1, size: 100 });
-        setCategories(response.content);
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-      }
-    };
+    fetchProducts();
     fetchCategories();
-  }, []);
+  }, [filters]);
 
-  // Debounced search
-  const debouncedSearch = debounce((search: string) => {
-    setFilters((prev) => ({ ...prev, page: 1, search }));
-  }, 300);
-
-  // Fetch products
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productService.getAllProducts(filters);
-      setProducts(response.content);
-      setPagination(response);
-      console.log(response);
+      setError(null);
+      const data = await productService.getAllProducts(filters);
+      setProducts(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch products');
+      setError('Failed to fetch products');
+      console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  console.log(products);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [filters]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
-
-  const handlePageChange = (page: number) => {
-    setPageRequest((prev) => ({ ...prev, page }));
-  };
-
-  const handlePageSizeChange = (size: number) => {
-    setPageRequest((prev) => ({ ...prev, page: 1, size }));
-  };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await productService.deleteProduct(id);
-        fetchProducts();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete product');
-      }
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryService.getAllCategories({
+        page: 1,
+        size: 100,
+        sort: 'id:asc',
+      });
+      setCategories(response.content);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
     }
   };
 
-  if (loading && !products.length) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  const handleSearchChange = debounce((value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      search: value || undefined,
+    }));
+  }, 300);
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      categoryId: categoryId || undefined,
+    }));
+  };
+
+  const handleSort = (field: ProductSortField) => {
+    const newDirection = field === sortField && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortDirection(newDirection);
+    setFilters((prev) => ({
+      ...prev,
+      sort: `${field}:${newDirection}`,
+    }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      size: newSize,
+    }));
+  };
+
+  const handlePriceChange = debounce((min: string, max: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      minPrice: min ? Number(min) : undefined,
+      maxPrice: max ? Number(max) : undefined,
+    }));
+  }, 300);
+
+  const handleStockChange = debounce((min: string, max: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: 1,
+      minStockQuantity: min ? Number(min) : undefined,
+      maxStockQuantity: max ? Number(max) : undefined,
+    }));
+  }, 300);
+
+  const getSortIcon = (field: ProductSortField) => {
+    if (field !== sortField) return '↕️';
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!products) return null;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Products</h1>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Products</h1>
         <Link
           to="/admin/products/create"
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          Add Product
+          Create Product
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <input
-              type="text"
-              placeholder="Search products..."
-              onChange={(e) => debouncedSearch(e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          <div>
-            <select
-              value={filters.categoryId || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  categoryId: e.target.value ? Number(e.target.value) : undefined,
-                }))
-              }
-              className="w-full p-2 border rounded"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
+      <div className="mb-4 space-y-4">
+        <div className="flex gap-4">
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              handleSearchChange(e.target.value);
+            }}
+            className="border p-2 rounded"
+          />
+
+          <select
+            value={selectedCategory}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex gap-4">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-gray-600">Price Range:</span>
             <input
               type="number"
               placeholder="Min Price"
-              value={filters.minPrice || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  minPrice: e.target.value ? Number(e.target.value) : undefined,
-                }))
-              }
-              className="w-full p-2 border rounded"
+              value={minPrice}
+              onChange={(e) => {
+                setMinPrice(e.target.value);
+                handlePriceChange(e.target.value, maxPrice);
+              }}
+              className="border p-2 rounded w-32"
+              min="0"
+              step="0.01"
             />
-          </div>
-          <div>
+            <span>-</span>
             <input
               type="number"
               placeholder="Max Price"
-              value={filters.maxPrice || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  maxPrice: e.target.value ? Number(e.target.value) : undefined,
-                }))
-              }
-              className="w-full p-2 border rounded"
+              value={maxPrice}
+              onChange={(e) => {
+                setMaxPrice(e.target.value);
+                handlePriceChange(minPrice, e.target.value);
+              }}
+              className="border p-2 rounded w-32"
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-gray-600">Stock Range:</span>
+            <input
+              type="number"
+              placeholder="Min Stock"
+              value={minStock}
+              onChange={(e) => {
+                setMinStock(e.target.value);
+                handleStockChange(e.target.value, maxStock);
+              }}
+              className="border p-2 rounded w-32"
+              min="0"
+              step="1"
+            />
+            <span>-</span>
+            <input
+              type="number"
+              placeholder="Max Stock"
+              value={maxStock}
+              onChange={(e) => {
+                setMaxStock(e.target.value);
+                handleStockChange(minStock, e.target.value);
+              }}
+              className="border p-2 rounded w-32"
+              min="0"
+              step="1"
             />
           </div>
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full">
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border">
           <thead>
-            <tr className="bg-gray-50">
+            <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Image
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('id')}
+              >
+                ID {getSortIcon('id')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('productName')}
+              >
+                Name {getSortIcon('productName')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('productPrice')}
+              >
+                Price {getSortIcon('productPrice')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('stockQuantity')}
+              >
+                Quantity {getSortIcon('stockQuantity')}
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('categories')}
+              >
+                Category {getSortIcon('categories')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Stock
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Categories
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product) => (
-              <tr key={product.id}>
+          <tbody>
+            {products.content.map((product) => (
+              <tr key={product.id} className="border-t hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   {product.imageList && product.imageList[0] ? (
                     <img
@@ -221,28 +300,25 @@ const ProductList = () => {
                     </div>
                   )}
                 </td>
-                <td className="px-6 py-4">{product.name}</td>
-                <td className="px-6 py-4">${product.price}</td>
-                <td className="px-6 py-4">{product.quantity}</td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {product.categories.map((category) => (
-                      <span key={category.id} className="px-2 py-1 text-xs bg-gray-100 rounded">
-                        {category.name}
-                      </span>
-                    ))}
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap">${product.price.toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{product.quantity}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {product.categories[0]?.name || 'No category'}
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 whitespace-nowrap">
                   <Link
                     to={`/admin/products/${product.id}/edit`}
-                    className="text-blue-500 hover:text-blue-700 mr-4"
+                    className="text-blue-600 hover:text-blue-900 mr-4"
                   >
                     Edit
                   </Link>
                   <button
-                    onClick={() => handleDelete(product.id)}
-                    className="text-red-500 hover:text-red-700"
+                    onClick={() => {
+                      /* TODO: Implement delete functionality */
+                    }}
+                    className="text-red-600 hover:text-red-900"
                   >
                     Delete
                   </button>
@@ -251,56 +327,40 @@ const ProductList = () => {
             ))}
           </tbody>
         </table>
+      </div>
 
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="px-6 py-4 border-t">
-            <div className="text-sm text-gray-500">
-              Showing {(pageRequest.page - 1) * pageRequest.size + 1} to{' '}
-              {Math.min(pageRequest.page * pageRequest.size, pagination.totalElements)} of{' '}
-              {pagination.totalElements} entries
-            </div>
+      <div className="mt-4 flex justify-between items-center">
+        <div>
+          <select
+            value={filters.size}
+            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+            className="border p-2 rounded"
+          >
+            <option value="10">10 per page</option>
+            <option value="20">20 per page</option>
+            <option value="50">50 per page</option>
+          </select>
+        </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => handlePageChange(pageRequest.page - 1)}
-                disabled={pageRequest.page === 1}
-                className="px-3 py-1 rounded border disabled:opacity-50"
-              >
-                Previous
-              </button>
-
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                .filter((page) => {
-                  const current = pageRequest.page;
-                  return (
-                    page === 1 ||
-                    page === pagination.totalPages ||
-                    (page >= current - 1 && page <= current + 1)
-                  );
-                })
-                .map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 rounded border ${
-                      pageRequest.page === page ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-              <button
-                onClick={() => handlePageChange(pageRequest.page + 1)}
-                disabled={pageRequest.page === pagination.totalPages}
-                className="px-3 py-1 rounded border disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => handlePageChange(filters.page - 1)}
+            disabled={filters.page === 1}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-2">
+            Page {filters.page} of {Math.ceil(products.totalElements / filters.size)}
+          </span>
+          <button
+            onClick={() => handlePageChange(filters.page + 1)}
+            disabled={filters.page >= Math.ceil(products.totalElements / filters.size)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

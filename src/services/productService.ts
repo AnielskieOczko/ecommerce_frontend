@@ -1,8 +1,13 @@
 import api from './api';
-import { ProductCreateDTO, ProductResponseDTO, ProductUpdateDTO } from '../types/product';
-import { PageRequest, PaginatedResponse } from '../types/common';
+import {
+  ProductCreateDTO,
+  ProductResponseDTO,
+  ProductUpdateDTO,
+  ProductSearchCriteria,
+} from '../types/product';
+import { BaseFilters, PaginatedResponse } from '../types/common';
 
-interface ProductFilters extends PageRequest {
+interface ProductFilters extends BaseFilters {
   categoryId?: number;
   minPrice?: number;
   maxPrice?: number;
@@ -12,18 +17,20 @@ const BASE_URL = '/api/v1/admin/products';
 
 // Updated product methods with pagination and filters
 export const getAllProducts = async (
-  params: ProductFilters
+  params: ProductSearchCriteria
 ): Promise<PaginatedResponse<ProductResponseDTO>> => {
   try {
     const response = await api.get<PaginatedResponse<ProductResponseDTO>>(BASE_URL, {
       params: {
+        search: params.search || undefined,
+        categoryId: params.categoryId || undefined,
+        minPrice: params.minPrice || undefined,
+        maxPrice: params.maxPrice || undefined,
+        minStockQuantity: params.minStockQuantity || undefined,
+        maxStockQuantity: params.maxStockQuantity || undefined,
         page: params.page - 1, // Convert to 0-based for backend
         size: params.size,
-        sort: params.sort,
-        search: params.search,
-        categoryId: params.categoryId,
-        minPrice: params.minPrice,
-        maxPrice: params.maxPrice,
+        sort: params.sort, // Already in format "field:direction"
       },
     });
     return response.data;
@@ -137,7 +144,7 @@ export const uploadImage = async (file: File): Promise<string> => {
 };
 
 // Public methods (no auth required)
-export const getPublicProducts = async (params: PageRequest) => {
+export const getPublicProducts = async (params: BaseFilters) => {
   try {
     const response = await api.get<PaginatedResponse<ProductResponseDTO>>(
       '/api/v1/public/products',

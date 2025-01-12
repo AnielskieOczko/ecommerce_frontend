@@ -32,9 +32,24 @@ export interface PaginatedResponse<T> {
   last: boolean;
 }
 
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortField {
+  field: string;
+  direction: SortDirection;
+}
+
+export const formatSort = (field: string, direction: SortDirection): string => {
+  return `${field}:${direction}`;
+};
+
 export interface PageRequest {
   page: number;
   size: number;
-  sort?: string;
+  sort: string;
+  search?: string;
+}
+
+export interface BaseFilters extends PageRequest {
   search?: string;
 }

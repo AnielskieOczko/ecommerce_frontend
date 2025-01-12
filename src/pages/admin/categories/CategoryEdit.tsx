@@ -1,21 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { productService } from '../../../services/productService';
 import { categoryService } from '../../../services/categoryService';
 
 const CategoryEdit = () => {
-  const { id } = useParams();
+  const { categoryId } = useParams();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('Route params - categoryId:', categoryId);
+
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const category = await categoryService.getCategoryById(Number(id));
+        if (!categoryId) {
+          console.log('No category ID provided');
+          setError('No category ID provided');
+          setLoading(false);
+          return;
+        }
+
+        const parsedId = parseInt(categoryId);
+        console.log('Parsed category ID:', parsedId);
+
+        if (isNaN(parsedId)) {
+          console.log('Failed to parse ID:', categoryId);
+          setError(`Invalid category ID format: "${categoryId}"`);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Fetching category with ID:', parsedId);
+        const category = await categoryService.getCategoryById(parsedId);
+        console.log('Fetched category:', category);
         setName(category.name);
       } catch (err) {
+        console.error('Error fetching category:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch category');
       } finally {
         setLoading(false);
@@ -23,12 +44,23 @@ const CategoryEdit = () => {
     };
 
     fetchCategory();
-  }, [id]);
+  }, [categoryId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await categoryService.updateCategory(Number(id), { name });
+      if (!categoryId) {
+        setError('No category ID provided');
+        return;
+      }
+
+      const parsedId = parseInt(categoryId);
+      if (isNaN(parsedId)) {
+        setError(`Invalid category ID format: "${categoryId}"`);
+        return;
+      }
+
+      await categoryService.updateCategory(parsedId, { name });
       navigate('/admin/categories');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update category');
@@ -36,7 +68,19 @@ const CategoryEdit = () => {
   };
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error)
+    return (
+      <div className="p-4 bg-red-50 text-red-600 rounded-lg">
+        <h2 className="text-lg font-semibold mb-2">Error</h2>
+        <p>{error}</p>
+        <button
+          onClick={() => navigate('/admin/categories')}
+          className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+        >
+          Back to Categories
+        </button>
+      </div>
+    );
 
   return (
     <div>
