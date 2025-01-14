@@ -10,6 +10,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 
 // Public Pages
 import HomePage from './pages/HomePage';
+import { ProductList as PublicProductList } from './pages/customer/products';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -39,6 +40,7 @@ function App() {
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
             <Route index element={<HomePage />} />
+            <Route path="/products" element={<PublicProductList />} />
           </Route>
 
           {/* Customer Routes */}

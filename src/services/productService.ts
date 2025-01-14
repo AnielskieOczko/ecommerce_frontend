@@ -14,6 +14,7 @@ interface ProductFilters extends BaseFilters {
 }
 
 const BASE_URL = '/api/v1/admin/products';
+const PUBLIC_BASE_URL = '/api/v1/public/products';
 
 // Updated product methods with pagination and filters
 export const getAllProducts = async (
@@ -144,19 +145,21 @@ export const uploadImage = async (file: File): Promise<string> => {
 };
 
 // Public methods (no auth required)
-export const getPublicProducts = async (params: BaseFilters) => {
+export const getPublicProducts = async (
+  params: ProductSearchCriteria
+): Promise<PaginatedResponse<ProductResponseDTO>> => {
   try {
-    const response = await api.get<PaginatedResponse<ProductResponseDTO>>(
-      '/api/v1/public/products',
-      {
-        params: {
-          page: params.page - 1,
-          size: params.size,
-          sort: params.sort,
-          search: params.search,
-        },
-      }
-    );
+    const response = await api.get<PaginatedResponse<ProductResponseDTO>>(PUBLIC_BASE_URL, {
+      params: {
+        search: params.search || undefined,
+        categoryId: params.categoryId || undefined,
+        minPrice: params.minPrice || undefined,
+        maxPrice: params.maxPrice || undefined,
+        page: params.page - 1, // Convert to 0-based for backend
+        size: params.size,
+        sort: params.sort, // Already in format "field:direction"
+      },
+    });
     return response.data;
   } catch (error) {
     throw error;

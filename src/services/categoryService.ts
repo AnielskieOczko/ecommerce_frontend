@@ -13,8 +13,14 @@ const CATEGORY_URL_ADMIN = '/api/v1/admin/categories';
 export const categoryService = {
   // Public endpoints
   getAllPublicCategories: async (): Promise<CategoryDTO[]> => {
-    const response = await api.get<CategoryDTO[]>(CATEGORY_URL_PUBLIC);
-    return response.data;
+    const response = await api.get<PaginatedResponse<CategoryDTO>>(CATEGORY_URL_PUBLIC, {
+      params: {
+        page: 0,
+        size: 100, // Get all categories in one request
+        sort: 'name:asc',
+      },
+    });
+    return response.data.content;
   },
 
   getCategoryNames: async (): Promise<string[]> => {
