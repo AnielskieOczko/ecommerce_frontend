@@ -1,6 +1,13 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import { Button } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+
   const navItems = [
     { to: '/admin', label: 'Dashboard', icon: '📊' },
     { to: '/admin/products', label: 'Products', icon: '📦' },
@@ -9,25 +16,49 @@ const AdminSidebar = () => {
     { to: '/admin/orders', label: 'Orders', icon: '🛍️' },
   ];
 
+  const handleLogout = async () => {
+    if (auth) {
+      await auth.logout();
+      navigate('/login');
+    }
+  };
+
   return (
-    <nav className="py-6">
-      {navItems.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === '/admin'}
-          className={({ isActive }) =>
-            `flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
-              isActive ? 'bg-gray-100 font-medium' : ''
-            }`
-          }
+    <div className="flex flex-col h-full">
+      <nav className="py-6 flex-grow">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/admin'}
+            className={({ isActive }) =>
+              `flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
+                isActive ? 'bg-gray-100 font-medium' : ''
+              }`
+            }
+          >
+            <span className="mr-3">{item.icon}</span>
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="p-4 border-t">
+        <Button
+          fullWidth
+          variant="contained"
+          color="error"
+          onClick={handleLogout}
+          startIcon={<LogoutIcon />}
+          sx={{
+            py: 1,
+            fontWeight: 'medium',
+          }}
         >
-          <span className="mr-3">{item.icon}</span>
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
+          Logout
+        </Button>
+      </div>
+    </div>
   );
 };
 
-export default AdminSidebar; 
+export default AdminSidebar;
