@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
+import useCart from '../hooks/useCart';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { Badge, IconButton } from '@mui/material';
 
 const Header: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { getItemCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -95,8 +99,13 @@ const Header: React.FC = () => {
             )}
             <button className="hover:text-gray-600">Search</button>
           </div>
-          <Link to="/cart" className="flex items-center hover:text-gray-600">
-            Cart (0)
+          <Link
+            to={isAuthenticated ? '/customer/cart' : '/login'}
+            className="flex items-center hover:text-gray-600"
+          >
+            <Badge badgeContent={getItemCount()} color="primary">
+              <ShoppingCartIcon />
+            </Badge>
           </Link>
         </div>
       </nav>

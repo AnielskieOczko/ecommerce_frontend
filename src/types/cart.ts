@@ -1,16 +1,25 @@
 export interface CartItemDTO {
-    id: number;
-    cartId: number;
-    productId: number;
-    productName: string;
-    quantity: number;
-    price: number;
-  }
-  
-  export interface CartDTO {
-    id: number;
-    userId: number;
-    cartItems: CartItemDTO[];
-    createdAt: string;
-    updatedAt: string;
-  }
+  id: Long;
+  cartId: Long;
+  productId: Long;
+  productName: string;
+  quantity: number;
+  price: BigDecimal;
+}
+
+export interface CartDTO {
+  id: Long;
+  userId: Long;
+  cartItems: CartItemDTO[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// TypeScript equivalents for Java types
+type Long = number;
+type BigDecimal = number;
+
+export interface CartItemRequest {
+  productId: Long;
+  quantity: number;
+}

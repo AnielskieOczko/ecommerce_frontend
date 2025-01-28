@@ -1,8 +1,18 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Route } from 'react-router-dom';
 import { adminRoutes } from './adminRoutes';
-// Import your other routes
+import { CustomerRoutes } from './customerRoutes';
+import HomePage from '../pages/HomePage';
+import { ProductList as PublicProductList } from '../pages/customer/products';
 
 export const router = createBrowserRouter([
-  // Your existing public routes
+  {
+    path: '/',
+    element: <HomePage />,
+  },
+  {
+    path: '/products',
+    element: <PublicProductList />,
+  },
+  CustomerRoutes,
   adminRoutes,
 ]);
