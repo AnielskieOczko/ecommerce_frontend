@@ -1,63 +1,40 @@
-import { RouteObject } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import AdminLayout from '../pages/admin/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
-// import {
-//   ProductList,
-//   ProductCreate,
-//   ProductEdit,
-// } from '../pages/admin/products';
-
 import { CategoryList, CategoryCreate, CategoryEdit } from '../pages/admin/categories';
-// import {
-//   UserList,
-//   UserEdit,
-// } from '../pages/admin/users';
-// import {
-//   OrderList,
-//   OrderEdit,
-// } from '../pages/admin/orders';
+import { ProductList, ProductCreate, ProductEdit } from '../pages/admin/products';
+import { UserList, UserCreate, UserEdit } from '../pages/admin/users';
+import RouteGuard from '../components/guards/RouteGuard';
 
-export const adminRoutes: RouteObject = {
-  path: '/admin',
-  element: <AdminLayout />,
-  children: [
-    {
-      index: true,
-      element: <Dashboard />,
-    },
-    // Products
-    // {
-    //   path: 'products',
-    //   children: [
-    //     { index: true, element: <ProductList /> },
-    //     { path: 'create', element: <ProductCreate /> },
-    //     { path: ':id/edit', element: <ProductEdit /> },
-    //   ],
-    // },
-    // Categories
-    {
-      path: 'categories',
-      children: [
-        { index: true, element: <CategoryList /> },
-        { path: 'create', element: <CategoryCreate /> },
-        { path: ':id/edit', element: <CategoryEdit /> },
-      ],
-    },
-    // Users
-    // {
-    //   path: 'users',
-    //   children: [
-    //     { index: true, element: <UserList /> },
-    //     { path: ':id/edit', element: <UserEdit /> },
-    //   ],
-    // },
-    // Orders
-    // {
-    //   path: 'orders',
-    //   children: [
-    //     { index: true, element: <OrderList /> },
-    //     { path: ':id/edit', element: <OrderEdit /> },
-    //   ],
-    // },
-  ],
-};
+export const adminRoutes = (
+  <Route
+    path="/admin"
+    element={
+      <RouteGuard requiredRoles={['ROLE_ADMIN']}>
+        <AdminLayout />
+      </RouteGuard>
+    }
+  >
+    <Route index element={<Dashboard />} />
+
+    {/* Products */}
+    <Route path="products">
+      <Route index element={<ProductList />} />
+      <Route path="create" element={<ProductCreate />} />
+      <Route path=":id/edit" element={<ProductEdit />} />
+    </Route>
+
+    {/* Categories */}
+    <Route path="categories">
+      <Route index element={<CategoryList />} />
+      <Route path="create" element={<CategoryCreate />} />
+      <Route path=":id/edit" element={<CategoryEdit />} />
+    </Route>
+
+    {/* Users */}
+    <Route path="users">
+      <Route index element={<UserList />} />
+      <Route path=":id/edit" element={<UserEdit />} />
+    </Route>
+  </Route>
+);

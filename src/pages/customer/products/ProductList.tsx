@@ -26,14 +26,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from 'react-router-dom';
 import { getPublicProducts } from '../../../services/productService';
 import { categoryService } from '../../../services/categoryService';
-import cartService from '../../../services/cartService';
 import { ProductResponseDTO, ProductSearchCriteria } from '../../../types/product';
 import { CategoryDTO } from '../../../types/category';
 import { PaginatedResponse } from '../../../types/common';
 import { getImageUrl } from '../../../utils/imageUtils';
 import { debounce } from 'lodash';
 import { useAuth } from '../../../contexts/AuthContext';
-import useCart from '../../../hooks/useCart';
+import { useCartContext } from '../../../contexts/CartContext';
 
 const sortOptions = [
   { value: 'productName:asc', label: 'Name (A-Z)' },
@@ -115,7 +114,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 const ProductList: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { fetchCart } = useCart();
+  const { addToCart } = useCartContext();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [products, setProducts] = useState<ProductResponseDTO[]>([]);
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
@@ -201,8 +200,7 @@ const ProductList: React.FC = () => {
     }
 
     try {
-      await cartService.addToCart(user!.id, productId, 1);
-      await fetchCart();
+      await addToCart(user!.id, productId, 1);
       setSnackbar({
         open: true,
         message: 'Product added to cart successfully',

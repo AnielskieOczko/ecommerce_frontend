@@ -10,10 +10,13 @@ export const useCart = () => {
 
   const fetchCart = async () => {
     try {
-      if (!user?.id) {
+      // Don't fetch cart for admin users or when there's no user
+      if (!user?.id || user?.roles?.includes('ROLE_ADMIN')) {
         setCart(null);
+        setLoading(false);
         return;
       }
+
       const cartData = await cartService.getCart(user.id);
       setCart(cartData);
     } catch (error) {
@@ -21,6 +24,16 @@ export const useCart = () => {
       setCart(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addToCart = async (userId: number, productId: number, quantity: number) => {
+    try {
+      await cartService.addToCart(userId, productId, quantity);
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error;
     }
   };
 
@@ -37,6 +50,7 @@ export const useCart = () => {
     cart,
     loading,
     fetchCart,
+    addToCart,
     getItemCount,
   };
 };

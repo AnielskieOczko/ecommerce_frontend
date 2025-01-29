@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import useCart from '../../../hooks/useCart';
+import { useCartContext } from '../../../contexts/CartContext';
 import { Input, Button } from '../../../components/ui';
 
 enum PaymentMethod {
@@ -58,7 +58,7 @@ const PAYMENT_METHODS = [
 const OrderSummary: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart } = useCart();
+  const { cart } = useCartContext();
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('summary');
   const [formData, setFormData] = useState<ShippingFormData>({
     firstName: '',

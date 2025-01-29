@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import useCart from '../hooks/useCart';
+import { useCartContext } from '../contexts/CartContext';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { Badge, IconButton } from '@mui/material';
 
 const Header: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const { getItemCount } = useCart();
+  const { getItemCount } = useCartContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
